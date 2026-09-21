@@ -1,8 +1,9 @@
 const express = require("express");
 const fs = require("fs");
 
+//middleware
 const app = express();
-app.use(express.json()); // Middleware to parse JSON request bodies
+app.use(express.json());
 
 const {
   getAllArticles,
@@ -43,3 +44,5 @@ app.delete("/comments/:id", deleteComment);
 app.listen(3000, () => {
   console.log("Server is running on port 3000");
 });
+
+//end
