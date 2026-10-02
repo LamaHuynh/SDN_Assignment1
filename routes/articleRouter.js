@@ -1,95 +1,145 @@
+const express = require("express");
 const fs = require("fs");
 const path = require("path");
 
-const dataFile = path.join(__dirname, "..", "data.json");
+const app = express();
+app.use(express.json());
 
-async function readData() {
-  const file = await fs.promises.readFile(dataFile, "utf8");
-  return JSON.parse(file);
-}
+const DATA_FILE_PATH = path.join(__dirname, "..", "data.json");
 
-async function saveData(data) {
-  await fs.promises.writeFile(dataFile, JSON.stringify(data, null, 2));
-}
+const readDataFile = async () => {
+  const raw = await fs.promises.readFile(DATA_FILE_PATH, "utf8");
+  return JSON.parse(raw);
+};
 
-//GET All articles at /articles
+const writeDataFile = async (data) => {
+  await fs.promises.writeFile(
+    DATA_FILE_PATH,
+    JSON.stringify(data, null, 2),
+    "utf8",
+  );
+};
+
+// GET /articles
 const getAllArticles = async (req, res) => {
   try {
-    const data = await readData();
-    res.json(data.articles);
+    const data = await readDataFile();
+    res.json(data.articles || []);
   } catch (error) {
-    res.status(500).send("Error reading data file");
+    console.error("Error reading file:", error.message);
+    res.status(500).json({ error: "Failed to read data" });
   }
 };
 
-//GET Article by ID at /articles/:id
+// GET /articles/:id
 const getArticleById = async (req, res) => {
-  try {
-    const data = await readData();
-    const article = data.articles.find((item) => item.id == req.params.id);
+  const articleId = req.params.id;
 
-    if (!article) return res.status(404).send("Article not found");
+  try {
+    const data = await readDataFile();
+    const articles = data.articles || [];
+
+    const article = articles.find((a) => String(a.id) === String(articleId));
+
+    if (!article) {
+      return res.status(404).json({ error: "Article not found" });
+    }
+
     res.json(article);
   } catch (error) {
-    res.status(500).send("Error reading data file");
+    console.error("Error reading file:", error.message);
+    res.status(500).json({ error: "Failed to read data" });
   }
 };
 
-//POST new article at /articles, new article must have an id appropriate for existing data
+// POST /articles
 const addArticle = async (req, res) => {
   try {
-    const data = await readData();
-    const lastArticle = data.articles[data.articles.length - 1];
-    const newId = lastArticle ? Number(lastArticle.id) + 1 : 1;
-    const newArticle = { id: newId, ...req.body };
+    const data = await readDataFile();
+    const articles = data.articles || [];
 
-    delete newArticle.id;
-    newArticle.id = newId;
-    data.articles.push(newArticle);
-    await saveData(data);
+    const maxId = articles.reduce(
+      (max, a) => Math.max(max, Number(a.id) || 0),
+      0,
+    );
+
+    const newId = maxId + 1;
+
+    const { id: _ignored, ...articleData } = req.body;
+    const newArticle = {
+      id: newId,
+      ...articleData,
+    };
+
+    articles.push(newArticle);
+
+    data.articles = articles;
+
+    await writeDataFile(data);
+
     res.status(201).json(newArticle);
   } catch (error) {
-    res.status(500).send("Error writing data file");
+    console.error("Error adding article:", error.message);
+    res.status(500).json({ error: "Failed to add article" });
   }
 };
 
-//PUT an article by ID at /articles/:id
+// PUT /articles/:id
 const updateArticle = async (req, res) => {
+  const articleId = req.params.id;
+
   try {
-    const data = await readData();
-    const articleIndex = data.articles.findIndex(
-      (item) => item.id == req.params.id,
-    );
-    if (articleIndex === -1) {
-      return res.status(404).send("Article not found");
+    const data = await readDataFile();
+    const articles = data.articles || [];
+
+    const index = articles.findIndex((a) => String(a.id) === String(articleId));
+
+    if (index === -1) {
+      return res.status(404).json({ error: "Article not found" });
     }
-    data.articles[articleIndex] = {
-      ...data.articles[articleIndex],
-      ...req.body,
-      id: data.articles[articleIndex].id,
+
+    const { id: _ignored, ...updateFields } = req.body;
+
+    articles[index] = {
+      ...articles[index],
+      ...updateFields,
     };
-    await saveData(data);
-    res.json(data.articles[articleIndex]);
+
+    data.articles = articles;
+
+    await writeDataFile(data);
+
+    res.json(articles[index]);
   } catch (error) {
-    res.status(500).send("Error updating article");
+    console.error("Error updating article:", error.message);
+    res.status(500).json({ error: "Failed to update article" });
   }
 };
 
-//DELETE an article at /articles/:id
+// DELETE /articles/:id
 const deleteArticle = async (req, res) => {
+  const articleId = req.params.id;
+
   try {
-    const data = await readData();
-    const articleIndex = data.articles.findIndex(
-      (item) => item.id == req.params.id,
-    );
-    if (articleIndex === -1) {
-      return res.status(404).send("Article not found");
+    const data = await readDataFile();
+    const articles = data.articles || [];
+
+    const index = articles.findIndex((a) => String(a.id) === String(articleId));
+
+    if (index === -1) {
+      return res.status(404).json({ error: "Article not found" });
     }
-    data.articles.splice(articleIndex, 1);
-    await saveData(data);
+
+    articles.splice(index, 1);
+
+    data.articles = articles;
+
+    await writeDataFile(data);
+
     res.status(204).send();
   } catch (error) {
-    res.status(500).send("Error deleting article");
+    console.error("Error deleting article:", error.message);
+    res.status(500).json({ error: "Failed to delete article" });
   }
 };
 

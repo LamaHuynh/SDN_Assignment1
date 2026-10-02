@@ -1,5 +1,49 @@
 {
+  "articles": [
+    {
+      "id": 1,
+      "title": "Introduction to Node.jsewrrrrrrrr121233231312312",
+      "content": "Node.js is a JavaScript runtime environmentewraaaaaaaaaaaaaa.",
+      "author": "Nguyen Van dfaaaaaaaaaaA",
+      "date": "2026-09-01"
+    },
+    {
+      "id": 2,
+      "title": "Getting Started with Express",
+      "content": "Express is a web framework for Node.js.",
+      "author": "Tran Thi B",
+      "date": "2026-09-02"
+    },
+    {
+      "id": 3,
+      "title": "Understanding REST API",
+      "content": "REST API allows applications to communicate through HTTP.",
+      "author": "Le Van C",
+      "date": "2026-09-03"
+    },
+    {
+      "title": "Introduction to Node.jsewrrrrrrrr",
+      "content": "Node.js is a JavaScript runtime environmentewraaaaaaaaaaaaaa.",
+      "author": "Nguyen Van dfaaaaaaaaaaA",
+      "date": "2026-09-03",
+      "id": 4
+    },
+    {
+      "id": 6,
+      "title": "Introduction to Node.jsewrrrrrrr22222222222222211111111111111111111111112r",
+      "content": "Node.js is a JavaScript runtime environmentewraaaaaaaaaaaaaa.",
+      "author": "Nguyen Van dfaaaaaaaaaaA",
+      "date": "2026-09-03"
+    }
+  ],
   "comments": [
+    {
+      "id": 1,
+      "articleId": 1,
+      "author": "Pham Thi D",
+      "content": "This is a useful introduction to Node.js.",
+      "date": "2026-09-04"
+    },
     {
       "id": 2,
       "articleId": 1,
@@ -26,20 +70,6 @@
       "articleId": 3,
       "author": "Le Thi H",
       "content": "REST API is an important topic for backend development.",
-      "date": "2026-09-06"
-    },
-    {
-      "id": 6,
-      "articleId": 2,
-      "author": "Le Thi Huuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu",
-      "content": "REST API is an important topic for backend development.sssssssssssssssssssrrrrrrrrrrrrrrrrrrr",
-      "date": "2026-09-06"
-    },
-    {
-      "id": 7,
-      "articleId": 8,
-      "author": "Le Thi Huuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu",
-      "content": "REST API is an important topic for backend development.sssssssssssssssssssrrrrrrrrrrrrrrrrrrr",
       "date": "2026-09-06"
     }
   ]

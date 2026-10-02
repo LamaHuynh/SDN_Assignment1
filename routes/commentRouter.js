@@ -5,118 +5,131 @@ const path = require("path");
 const app = express();
 app.use(express.json());
 
-//GET All comments at /comments
+const DATA_FILE_PATH = path.join(__dirname, "..", "data.json");
+
+const readDataFile = async () => {
+  const raw = await fs.promises.readFile(DATA_FILE_PATH, "utf8");
+  return JSON.parse(raw);
+};
+
+const writeDataFile = async (data) => {
+  await fs.promises.writeFile(
+    DATA_FILE_PATH,
+    JSON.stringify(data, null, 2),
+    "utf8",
+  );
+};
+
+// GET /comments
 const getAllComments = async (req, res) => {
   try {
-    const data = await fs.promises.readFile(
-      path.join(__dirname, "..", "data.json"),
-      "utf8",
-    );
-    const comments = JSON.parse(data).comments;
-    res.json(comments);
+    const data = await readDataFile();
+    res.json(data.comments || []);
   } catch (error) {
-    res.status(500).send("Error reading data file");
+    console.error("Error reading file:", error.message);
+    res.status(500).json({ error: "Failed to read data" });
   }
 };
 
-//GET comment by Id at /comments/:id
+// GET /comments/:id
 const getCommentById = async (req, res) => {
   const commentId = req.params.id;
+
   try {
-    const data = await fs.promises.readFile(
-      path.join(__dirname, "..", "data.json"),
-      "utf8",
-    );
-    const comments = JSON.parse(data).comments;
-    const comment = comments.find((a) => String(a.id) === String(commentId));
-    if (comment) {
-      res.json(comment);
-    } else {
-      res.status(404).send("Comment not found");
+    const data = await readDataFile();
+    const comments = data.comments || [];
+
+    const comment = comments.find((c) => String(c.id) === String(commentId));
+
+    if (!comment) {
+      return res.status(404).json({ error: "Comment not found" });
     }
+
+    res.json(comment);
   } catch (error) {
-    res.status(500).send("Error reading data file");
+    console.error("Error reading file:", error.message);
+    res.status(500).json({ error: "Failed to read data" });
   }
 };
 
-//POST new comment at /comments
+//POST /comments
 const addComment = async (req, res) => {
   try {
-    const data = await fs.promises.readFile(
-      path.join(__dirname, "..", "data.json"),
-      "utf8",
+    const data = await readDataFile();
+    const comments = data.comments || [];
+
+    const maxId = comments.reduce(
+      (max, c) => Math.max(max, Number(c.id) || 0),
+      0,
     );
-    const comments = JSON.parse(data).comments;
-    const newId =
-      comments.reduce(
-        (maxId, comment) => Math.max(maxId, Number(comment.id) || 0),
-        0,
-      ) + 1;
-    const { id: _ignoredId, ...commentData } = req.body;
+    const newId = maxId + 1;
+
+    const { id: _ignored, ...commentData } = req.body;
     const newComment = { id: newId, ...commentData };
+
     comments.push(newComment);
-    await fs.promises.writeFile(
-      path.join(__dirname, "..", "data.json"),
-      JSON.stringify({ comments }, null, 2),
-    );
+
+    data.comments = comments;
+
+    await writeDataFile(data);
+
     res.status(201).json(newComment);
   } catch (error) {
-    res.status(500).send("Error writing data file");
+    console.error("Error adding comment:", error.message);
+    res.status(500).json({ error: "Failed to add comment" });
   }
 };
 
-//PUT a comment at /comments/:id
+//PUT /comments/:id
 const updateComment = async (req, res) => {
   const commentId = req.params.id;
-  const updatedData = req.body;
-  try {
-    const data = await fs.promises.readFile(
-      path.join(__dirname, "..", "data.json"),
-      "utf8",
-    );
-    const comments = JSON.parse(data).comments;
-    const commentIndex = comments.findIndex(
-      (c) => String(c.id) === String(commentId),
-    );
 
-    if (commentIndex === -1) {
-      return res.status(404).send("Comment not found");
+  try {
+    const data = await readDataFile();
+    const comments = data.comments || [];
+
+    const index = comments.findIndex((c) => String(c.id) === String(commentId));
+
+    if (index === -1) {
+      return res.status(404).json({ error: "Comment not found" });
     }
 
-    comments[commentIndex] = { ...comments[commentIndex], ...updatedData };
-    await fs.promises.writeFile(
-      path.join(__dirname, "..", "data.json"),
-      JSON.stringify({ comments }, null, 2),
-    );
-    res.json(comments[commentIndex]);
+    const { id: _ignored, ...updateFields } = req.body;
+    comments[index] = { ...comments[index], ...updateFields };
+
+    data.comments = comments;
+    await writeDataFile(data);
+
+    res.json(comments[index]);
   } catch (error) {
-    res.status(500).send("Error updating comment");
+    console.error("Error updating comment:", error.message);
+    res.status(500).json({ error: "Failed to update comment" });
   }
 };
 
-//DELETE a comment at /comments/:id
+//DELETE /comments/:id
 const deleteComment = async (req, res) => {
   const commentId = req.params.id;
+
   try {
-    const data = await fs.promises.readFile(
-      path.join(__dirname, "..", "data.json"),
-      "utf8",
-    );
-    const comments = JSON.parse(data).comments;
-    const commentIndex = comments.findIndex(
-      (c) => String(c.id) === String(commentId),
-    );
-    if (commentIndex === -1) {
-      return res.status(404).send("Comment not found");
+    const data = await readDataFile();
+    const comments = data.comments || [];
+
+    const index = comments.findIndex((c) => String(c.id) === String(commentId));
+
+    if (index === -1) {
+      return res.status(404).json({ error: "Comment not found" });
     }
-    comments.splice(commentIndex, 1);
-    await fs.promises.writeFile(
-      path.join(__dirname, "..", "data.json"),
-      JSON.stringify({ comments }, null, 2),
-    );
+
+    comments.splice(index, 1);
+
+    data.comments = comments;
+    await writeDataFile(data);
+
     res.status(204).send();
   } catch (error) {
-    res.status(500).send("Error deleting comment");
+    console.error("Error deleting comment:", error.message);
+    res.status(500).json({ error: "Failed to delete comment" });
   }
 };
 
